@@ -1,25 +1,20 @@
-import typeInfoTemplate from '../templates/TypeInfoTemplate.html';
-
-
-export const typeState = {
-  name: 'type',
-  url: '/type/{typeName}',
-  template: typeInfoTemplate,
-  controller: 'TypeInfoController',
-  controllerAs: 'typeCtrl',
-  resolve: {
-    typeInfo(GQLService, $transition$) {
-      'ngInject';
-
-      const response = GQLService.getTypeInfo($transition$.params().typeName);
-      response.then(res => {
-        console.log('typeInfo resolve: ', res);
-      });
-      return response;
-    }
-  }
+export const typeList = {
+  name: 'types',
+  url: '/types'
 };
 
-export const indexState = {
+export const typeState = {
+  name: 'types.type',
+  url: '/{typeName}'
+};
 
+export const queryList = {
+  name: 'queries',
+  url: '/queries'
+};
+
+
+export const queryState = {
+  name: 'queries.query',
+  url: '/{queryName}'
 };

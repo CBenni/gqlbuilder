@@ -32,9 +32,9 @@ const config = {
         use: 'raw-loader'
       },
       {
-        test: /html\/\w+\.html$/,
+        test: /\.html$/,
         use: ['file-loader?name=pages/[name].[ext]'],
-        exclude: path.resolve(__dirname, 'src/html/index.html')
+        exclude: [path.resolve(__dirname, 'src/templates'), path.resolve(__dirname, 'src/html/index.html')]
       },
       {
         test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,

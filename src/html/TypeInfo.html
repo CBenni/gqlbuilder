@@ -1,0 +1,69 @@
+<div layout="row" flex="100">
+  <md-sidenav class="md-sidenav-left" flex="15" layout="column" md-is-locked-open="true">
+    <div class="md-primary" flex="none">
+      <md-input-container>
+        <input type="text" placeholder="Search..." ng-model="mainCtrl.searchText">
+      </md-input-container>
+    </div>
+    <md-list class="md-dense" md-virtual-repeat-container flex="100">
+      <md-list-item md-virtual-repeat="type in mainCtrl.types | filter: {name:mainCtrl.searchText}" md-on-demand="false" ng-class="{selected: mainCtrl.selectedType==type}" ui-sref="types.type({typeName: type.name})">
+        <div class="md-list-item-text">
+          <h4>{{type.name}}</h4>
+        </div>
+      </md-list-item>
+    </md-list>
+  </md-sidenav>
+
+  <div layout="row" flex="100" class="content-wrapper" layout-align="center stretch">
+    <div class="content md-whiteframe-4dp" layout="column" flex="85" layout="row">
+      <div flex="none" layout="column" layout-align="start center" class="type-info">
+        <h2>{{mainCtrl.selectedType.name}}</h2>
+        <p>{{mainCtrl.selectedType.description}}</p>
+      </div>
+      <div flex="none" layout="column" class="fields-info">
+        <div ng-repeat="field in mainCtrl.selectedType.fields" class="field-info md-whiteframe-2dp" layout="row" layout-wrap>
+          <div flex="50" class="field-name">
+            <strong>{{field.name}}</strong> <span ng-if="field.args.length > 0">(
+              <span ng-repeat="arg in field.args" ng-class="{indent: field.args.length > 1}">
+                <br ng-if="field.args.length > 1">
+                <span class="argument-name">{{arg.name}}</span> : <span gql-type="arg.type"></span>
+              </span>
+              <br ng-if="field.args.length > 1">
+            )
+            </span>
+          </div>
+          <div flex="50">
+            <span gql-type="field.type">
+          </div>
+          <div flex="100">
+            {{field.description}}
+          </div>
+        </div>
+        <div ng-repeat="field in mainCtrl.selectedType.inputFields" class="field-info md-whiteframe-2dp" layout="row" layout-wrap>
+          <div flex="25">
+            <strong>{{field.name}}</strong>
+          </div>
+          <div flex="50">
+              <span gql-type="field.type">
+          </div>
+          <div flex="100">
+            {{field.description}}
+          </div>
+        </div>
+        <div ng-if="mainCtrl.selectedType.enumValues">
+          <h3>Enum values:</h3>
+          <div ng-repeat="enumValue in mainCtrl.selectedType.enumValues" class="enum-value-info md-whiteframe-2dp" layout="row" layout-wrap>
+            <div flex="25">
+              {{enumValue.name}}
+            </div>
+            <div flex="75">
+              {{enumValue.description}}
+            </div>
+          </div>
+        </div>
+        <hr> {{mainCtrl.selectedType}}
+      </div>
+
+    </div>
+  </div>
+</div>

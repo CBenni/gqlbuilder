@@ -2,7 +2,7 @@
 @import './md-fixes.scss';
 
 body {
-  background-color: #cfcfcf;
+  background-color: #f9f9f9;
 }
 
 .content, .nav {
@@ -12,6 +12,11 @@ body {
 
 .content {
   overflow-y: auto;
+  margin-right: 12px;
+}
+
+.content-wrapper {
+  background-color: #90909f;
 }
 
 md-list-item.selected {
@@ -22,4 +27,26 @@ md-list-item.selected {
 .field-info, .enum-value-info {
   margin: 8px;
   padding: 8px;
+}
+
+.field-info .field-name {
+  margin-bottom: 8px;
+}
+
+.fullheight {
+  height: 100%;
+}
+
+.indent {
+  padding-left: 12px;
+}
+
+.argument-name {
+  color: green;
+  font-weight: bold;
+}
+
+input.bland {
+  border: 0px none;
+  background-color: transparent;
 }

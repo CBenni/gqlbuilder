@@ -1,0 +1,23 @@
+<div layout="row" layout-align="center stretch" class="content-wrapper" flex="100" ng-controller="QueryBuilderController as queryCtrl">
+  <div layout="column" class="query-list content md-whiteframe-4dp" flex="15">
+    <md-button ng-click="queryCtrl.addQuery()" class="md-primary md-raised">
+      New query
+    </md-button>
+    <md-list class="md-dense" md-virtual-repeat-container flex="100">
+      <md-list-item md-virtual-repeat="query in queryCtrl.queries | filter: {name:queryCtrl.searchText}" md-on-demand="false" ng-class="{selected: queryCtrl.selectedQuery==query}" ng-click="queryCtrl.selectedQuery = query;">
+        <div class="md-list-item-text">
+          <h4>{{query.name || 'Unnamed query'}}</h4>
+        </div>
+      </md-list-item>
+    </md-list>
+  </div>
+  <div layout="column" class="query-overview content md-whiteframe-4dp" flex="35">
+    <md-input-container>
+      <input type="text" ng-model="queryCtrl.selectedQuery.name" placeholder="Query name">
+    </md-input-container>
+    {{queryCtrl.selectedQuery}}
+  </div>
+  <div layout="column" class="type-info content md-whiteframe-4dp" flex="35">
+    type info
+  </div>
+</div>

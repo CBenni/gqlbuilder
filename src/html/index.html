@@ -10,27 +10,22 @@
 
 <body layout="column">
   <div class="header" flex="none">
-    header
+    <h2>GQLBuilder</h2>
   </div>
-  <div layout="row" flex="100">
-    <div class="nav" flex="15" layout="column">
-        <div flex="none">
-          <md-input-container>
-            <input type"text" ng-model="mainCtrl.searchText">
-          </md-input-container>
-        </div>
-        <md-list class="md-dense" md-virtual-repeat-container flex="100">
-          <md-list-item md-virtual-repeat="type in mainCtrl.types | filter: {name:mainCtrl.searchText}" md-on-demand="false" ng-class="{selected: mainCtrl.selectedType==type}" ui-sref="typeInfo({typeName: type.name})" ui-sref-active="selected" ng-click="true">
-            <div class="md-list-item-text">
-              <h4>{{type.name}}</h4>
-            </div>
-          </md-list-item>
-        </md-list>
-    </div>
-    <div class="content-wrapper" flex="85" layout="row">
-      <ui-view flex="100" layout-align="center stretch" layout="row"></ui-view>
-    </div>
-  </div>
+  <md-tabs flex="100" md-dynamic-height="false" class="md-primary">
+    <md-tab md-active="mainCtrl.$state.includes('types')">
+      <md-tab-label>Types</md-tab-label>
+      <md-tab-body layout="column">
+        <div ng-include src="'/pages/TypeInfo.html'" flex="100" layout="column" class="fullheight"></div>
+      </md-tab-body>
+    </md-tab>
+    <md-tab md-active="mainCtrl.$state.includes('queries')">
+      <md-tab-label>Query Builder</md-tab-label>
+      <md-tab-body layout="column">
+        <div ng-include src="'/pages/QueryBuilder.html'" flex="100" layout="column" class="fullheight"></div>
+      </md-tab-body>
+    </md-tab>
+  </md-tabs>
 </body>
 
 </html>
