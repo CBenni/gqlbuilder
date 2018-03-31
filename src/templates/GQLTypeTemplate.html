@@ -1,0 +1,3 @@
+<a ui-sref="typeInfo({typeName: gqlType.name})" class="gql-typename" ng-if="gqlType.name">{{gqlType.name}}</a>
+<span ng-if="gqlType.kind === 'LIST'">[ <span gql-type="gqlType.ofType"></span> ]</span>
+<span ng-if="gqlType.kind === 'NON_NULL'"><span gql-type="gqlType.ofType"></span> (not null)</span>

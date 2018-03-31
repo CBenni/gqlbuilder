@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html ng-app="gqlApp" ng-controller="MainController as mainCtrl">
+
+<head>
+  <title>GQLBuilder by CBenni</title>
+  <meta charset="UTF-8">
+  <base href="/">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+
+<body layout="column">
+  <div class="header" flex="none">
+    header
+  </div>
+  <div layout="row" flex="100">
+    <div class="nav" flex="15" layout="column">
+        <div flex="none">
+          <md-input-container>
+            <input type"text" ng-model="mainCtrl.searchText">
+          </md-input-container>
+        </div>
+        <md-list class="md-dense" md-virtual-repeat-container flex="100">
+          <md-list-item md-virtual-repeat="type in mainCtrl.types | filter: {name:mainCtrl.searchText}" md-on-demand="false" ng-class="{selected: mainCtrl.selectedType==type}" ui-sref="typeInfo({typeName: type.name})" ui-sref-active="selected" ng-click="true">
+            <div class="md-list-item-text">
+              <h4>{{type.name}}</h4>
+            </div>
+          </md-list-item>
+        </md-list>
+    </div>
+    <div class="content-wrapper" flex="85" layout="row">
+      <ui-view flex="100" layout-align="center stretch" layout="row"></ui-view>
+    </div>
+  </div>
+</body>
+
+</html>

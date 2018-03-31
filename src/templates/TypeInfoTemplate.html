@@ -1,0 +1,45 @@
+<div class="content" layout="column">
+  <div flex="none" layout="column" layout-align="start center" class="type-info">
+    <h2>{{typeCtrl.typeInfo.name}}</h2>
+    <p>{{typeCtrl.typeInfo.description}}</p>
+  </div>
+  <div flex="none" layout="column" class="fields-info">
+    <div ng-repeat="field in typeCtrl.typeInfo.fields" class="field-info md-whiteframe-2dp" layout="row" layout-wrap>
+      <div flex="25">
+        <strong>{{field.name}}</strong>
+      </div>
+      <div flex="25">
+        <span gql-type="field.type">
+      </div>
+      <div flex="100">
+        {{field.description}}
+      </div>
+    </div>
+    <div ng-repeat="field in typeCtrl.typeInfo.inputFields" class="field-info md-whiteframe-2dp" layout="row" layout-wrap>
+      <div flex="25">
+        <strong>{{field.name}}</strong>
+      </div>
+      <div flex="25" ng-if="field.type.name">
+        <a ui-sref="typeInfo({typeName: field.type.name})">{{field.type.name}}</a>
+      </div>
+      <div flex="25" ng-if="field.type.ofType.name">
+        {{field.type.ofType.name}}
+      </div>
+      <div flex="100">
+        {{field.description}}
+      </div>
+    </div>
+    <div ng-if="typeCtrl.typeInfo.enumValues">
+      <h3>Enum values:</h3>
+      <div ng-repeat="enumValue in typeCtrl.typeInfo.enumValues" class="enum-value-info md-whiteframe-2dp" layout="row" layout-wrap>
+        <div flex="25">
+          {{enumValue.name}}
+        </div>
+        <div flex="75">
+          {{enumValue.description}}
+        </div>
+      </div>
+    </div>
+    <hr> {{typeCtrl.typeInfo}}
+  </div>
+</div>

@@ -1,0 +1,25 @@
+@import '../../node_modules/angular-material/angular-material.scss';
+@import './md-fixes.scss';
+
+body {
+  background-color: #cfcfcf;
+}
+
+.content, .nav {
+  background-color: #f9f9f9;
+  width: 85%;
+}
+
+.content {
+  overflow-y: auto;
+}
+
+md-list-item.selected {
+  background-color: #333;
+  color: #f0f0f0;
+}
+
+.field-info, .enum-value-info {
+  margin: 8px;
+  padding: 8px;
+}
