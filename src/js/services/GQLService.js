@@ -76,6 +76,44 @@ export default class GQLService {
         return type;
       });
     }
+    if (type.kind === 'UNION') {
+      return this.gqlQuery(`
+      fragment typeDefinition on __Type {
+        name
+        kind
+        ofType {
+          name
+          kind
+          ofType {
+            name
+            kind
+            ofType {
+              name
+              kind
+              ofType {
+                name
+                kind
+              }
+            }
+          }
+        }
+      }
+      {
+        __type(name: "${type.name}")
+        {
+          ...typeDefinition
+          possibleTypes {
+            ...typeDefinition
+          }
+          description
+        }
+      }`).then(body => {
+        console.log(`Received GQL type response for ${type.name}: `, body);
+        _.merge(type, body.data.__type);
+        type.loaded = true;
+        return type;
+      });
+    }
     return this.gqlQuery(`
     fragment typeDefinition on __Type {
       name

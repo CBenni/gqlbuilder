@@ -6,7 +6,8 @@
       </md-input-container>
     </div>
     <md-list class="md-dense" md-virtual-repeat-container flex="100">
-      <md-list-item md-virtual-repeat="type in mainCtrl.types | filter: {name:mainCtrl.searchText}" md-on-demand="false" ng-class="{selected: mainCtrl.selectedType==type}" ui-sref="types.type({typeName: type.name})">
+      <md-list-item md-virtual-repeat="type in mainCtrl.types | filter: {name:mainCtrl.searchText}" md-on-demand="false" ng-class="{selected: mainCtrl.selectedType==type}"
+        ui-sref="types.type({typeName: type.name})">
         <div class="md-list-item-text">
           <h4>{{type.name}}</h4>
         </div>
@@ -23,13 +24,14 @@
       <div flex="none" layout="column" class="fields-info">
         <div ng-repeat="field in mainCtrl.selectedType.fields" class="field-info md-whiteframe-2dp" layout="row" layout-wrap>
           <div flex="50" class="field-name">
-            <strong>{{field.name}}</strong> <span ng-if="field.args.length > 0">(
+            <strong>{{field.name}}</strong>
+            <span ng-if="field.args.length > 0">(
               <span ng-repeat="arg in field.args" ng-class="{indent: field.args.length > 1}">
                 <br ng-if="field.args.length > 1">
-                <span class="argument-name">{{arg.name}}</span> : <span gql-type="arg.type"></span>
+                <span class="argument-name">{{arg.name}}</span> :
+                <span gql-type="arg.type"></span>
               </span>
-              <br ng-if="field.args.length > 1">
-            )
+              <br ng-if="field.args.length > 1"> )
             </span>
           </div>
           <div flex="50">
@@ -44,7 +46,7 @@
             <strong>{{field.name}}</strong>
           </div>
           <div flex="50">
-              <span gql-type="field.type">
+            <span gql-type="field.type">
           </div>
           <div flex="100">
             {{field.description}}
@@ -59,6 +61,15 @@
             <div flex="75">
               {{enumValue.description}}
             </div>
+          </div>
+        </div>
+        <div ng-if="mainCtrl.selectedType.possibleTypes">
+          <h3>Union types:</h3>
+          <div class="enum-value-info md-whiteframe-2dp" layout="row" layout-wrap>
+            <span ng-repeat="possibleType in mainCtrl.selectedType.possibleTypes">
+              <span gql-type="possibleType"></span>
+              <span ng-if="!$last"> |&nbsp;</span>
+            </span>
           </div>
         </div>
         <hr> {{mainCtrl.selectedType}}

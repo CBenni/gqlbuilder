@@ -10,3 +10,8 @@ md-list.md-dense md-list-item::before, md-list.md-dense md-list-item .md-list-it
   min-height: 0px;
   line-height: 0;
 }
+
+md-checkbox.margin-fix {
+  margin-bottom: 8px;
+  margin-top: 8px;
+}

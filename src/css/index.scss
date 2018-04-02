@@ -40,6 +40,9 @@ md-list-item.selected {
 .indent {
   padding-left: 12px;
 }
+.indent-large {
+  padding-left: 24px;
+}
 
 .argument-name {
   color: green;
@@ -49,4 +52,14 @@ md-list-item.selected {
 input.bland {
   border: 0px none;
   background-color: transparent;
+}
+
+.fake-link {
+  color: rgb(0,0,238);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.query-string {
+  white-space: pre;
 }
