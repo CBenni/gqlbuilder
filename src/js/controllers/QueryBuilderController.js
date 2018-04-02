@@ -200,15 +200,6 @@ export default class QueryBuilderController {
         this.queryItemFromObject(fieldObject, fieldInfo.queryItem);
       });
     });
-    /*
-    const name = obj.name;
-    this.complex = !(this.type.kind === 'ENUM' || this.type.kind === 'SCALAR');
-    this.checked = true;
-    this.indeterminate = false;
-    this.breadcrumbs = breadcrumbs.slice(1);
-    // await this.GQLService.getTypeInfo(type);
-    const queryItem = new QueryItem(this.GQLService, obj.name, type, breadcrumbs);
-    return */
   }
 
   loadQueries() {
