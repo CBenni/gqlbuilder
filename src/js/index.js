@@ -9,6 +9,7 @@ import MainController from './controllers/MainController';
 import QueryBuilderController from './controllers/QueryBuilderController';
 import GQLService from './services/GQLService';
 import GQLTypeDirective from './directives/GQLTypeDirective';
+import GQLQueryItemDirective from './directives/GQLQueryItemDirective';
 import { typeList, typeState, queryList, queryState } from './states';
 
 import '../css/index.scss';
@@ -22,6 +23,7 @@ app.controller('MainController', MainController);
 app.controller('QueryBuilderController', QueryBuilderController);
 app.service('GQLService', GQLService);
 app.directive('gqlType', GQLTypeDirective);
+app.directive('gqlQueryItem', GQLQueryItemDirective);
 
 app.run($q => {
   'ngInject';

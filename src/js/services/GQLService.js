@@ -26,6 +26,7 @@ export default class GQLService {
 
   getTypeInfo(type) {
     if (!type) return null;
+    if (type.loaded) return Promise.resolve(type);
     if (type.kind === 'ENUM') {
       return this.gqlQuery(`{__type(name: "${type.name}") { name enumValues{ name description } description }}`).then(body => {
         console.log(`Received GQL type response for ${type.name}: `, body);
@@ -119,6 +120,7 @@ export default class GQLService {
     }`).then(body => {
       console.log(`Received GQL type response for ${type.name}: `, body);
       _.merge(type, body.data.__type);
+      type.loaded = true;
       return type;
     });
   }

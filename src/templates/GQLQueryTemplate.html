@@ -1,0 +1,20 @@
+<span class="query-item-name">{{gqlQueryItem.name}}</span>
+<span ng-if="gqlQueryItem.args.length > 0" class="query-item-args">(
+  <span ng-repeat="arg in gqlQueryItem.args" ng-class="{indent: gqlQueryItem.args.length > 1}">
+    <br ng-if="gqlQueryItem.args.length > 1">
+    <span class="argument-name">{{arg.name}}</span> :
+    <input type="text" class="plain" ng-model="arg.value">
+  </span>
+  <br ng-if="gqlQueryItem.args.length > 1"> )
+</span>
+<span ng-if="gqlQueryItem.fields.length > 0">
+  {
+    <div class="indent">
+      <div ng-repeat="field in gqlQueryItem.fields">
+        <md-checkbox ng-model="field.selected" ng-change="gqlQueryItem.selectField(field)"></md-checkbox>
+        <span ng-if="!field.selected || !field.queryItem">{{field.name}}</span>
+        <span ng-if="field.selected && field.queryItem" gql-query-item="field.queryItem"></span>
+      </div>
+    </div>
+  }
+</span>
