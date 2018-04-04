@@ -11,8 +11,14 @@ export default class GQLService {
     this.getAllTypes();
   }
 
-  gqlQuery(query) {
-    return this.$http.post(config.baseUrl, { variables: {}, extensions: {}, query }, { headers: config.headers }).then(response => response.data);
+  gqlQuery(query, variables, headers) {
+    // strip $ signs from variables
+    const vars = {};
+    _.each(variables, (value, key) => {
+      vars[key.replace('$', '')] = value;
+    });
+    headers = _.merge({}, headers, config.headers);
+    return this.$http.post(config.baseUrl, { variables: vars, extensions: {}, query }, { headers }).then(response => response.data);
   }
 
   getAllTypes() {

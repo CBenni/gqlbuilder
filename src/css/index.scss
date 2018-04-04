@@ -63,3 +63,25 @@ input.bland {
 .query-string {
   white-space: pre;
 }
+
+.hidden {
+  visibility: hidden;
+}
+
+.query-item-field {
+  cursor: pointer;
+  outline: none;
+  padding-left: 8px;
+
+  &:hover {
+    background-color: #f3f3f3;
+  }
+}
+
+.wide-input-container {
+  width: 70%;
+}
+
+.header h2 {
+  margin: 20px;
+}

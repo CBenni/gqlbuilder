@@ -1,5 +1,7 @@
 import _ from 'lodash';
 import config from '../config';
+import typeInfoPartial from '../../html/TypeInfo.html';
+import queryBuilderPartial from '../../html/QueryBuilder.html';
 
 export default class {
   constructor($scope, $state, $stateParams, $transitions, GQLService) {
@@ -9,6 +11,10 @@ export default class {
     this.$state = $state;
     this.$stateParams = $stateParams;
     this.config = config;
+
+    $scope.typeInfoPartial = typeInfoPartial;
+    $scope.queryBuilderPartial = queryBuilderPartial;
+    console.log('Partial urls: ', [typeInfoPartial, queryBuilderPartial]);
 
     this.GQLService = GQLService;
 

@@ -10,6 +10,7 @@ import QueryBuilderController from './controllers/QueryBuilderController';
 import GQLService from './services/GQLService';
 import GQLTypeDirective from './directives/GQLTypeDirective';
 import GQLQueryItemDirective from './directives/GQLQueryItemDirective';
+import DialogController from './controllers/DialogController';
 import { typeList, typeState, queryList, queryState } from './states';
 
 import '../css/index.scss';
@@ -21,6 +22,7 @@ const app = angular.module('gqlApp', [angularAria, angularAnimate, angularMateri
 
 app.controller('MainController', MainController);
 app.controller('QueryBuilderController', QueryBuilderController);
+app.controller('DialogController', DialogController);
 app.service('GQLService', GQLService);
 app.directive('gqlType', GQLTypeDirective);
 app.directive('gqlQueryItem', GQLQueryItemDirective);
@@ -35,7 +37,7 @@ app.run($q => {
 app.config(($locationProvider, $stateProvider) => {
   'ngInject';
 
-  $locationProvider.html5Mode(true);
+  // $locationProvider.html5Mode(true);
   $stateProvider.state('types', typeList);
   $stateProvider.state('types.type', typeState);
   $stateProvider.state('queries', queryList);

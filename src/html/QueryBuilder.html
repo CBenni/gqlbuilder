@@ -7,14 +7,18 @@
       <md-list-item md-virtual-repeat="query in queryCtrl.queries | filter: {name:queryCtrl.searchText}" md-on-demand="false" ng-class="{selected: queryCtrl.selectedQuery==query}"
         ng-click="queryCtrl.selectQuery(query)">
         <div class="md-list-item-text">
-          <h4>{{query.name || 'Unnamed query'}}</h4>
+          <h4>{{query.root.name || query.obj.name || 'Unnamed query'}}</h4>
         </div>
+        <md-button class="md-secondary md-icon-button" ng-click="queryCtrl.deleteQuery($event, query)">
+          <md-icon>delete</md-icon>
+        </md-button>
       </md-list-item>
     </md-list>
   </div>
-  <div layout="column" class="query-overview content md-whiteframe-4dp layout-padding" flex="35">
+  <div layout="column" class="query-overview content md-whiteframe-4dp layout-padding" ng-class="{hidden: !queryCtrl.selectedQuery}"
+    flex="35">
     <md-input-container>
-      <input type="text" ng-model="queryCtrl.selectedQuery.name" placeholder="Query name">
+      <input type="text" ng-model="queryCtrl.selectedQuery.root.name" placeholder="Query name" ng-change="queryCtrl.onChange()">
     </md-input-container>
     <span class="query-breadcrumbs">
       <span class="query-breadcrumb" ng-repeat="breadcrumb in queryCtrl.selectedQuery.currentItem.breadcrumbs" ng-click="queryCtrl.selectedQuery.currentItem = breadcrumb">
@@ -23,33 +27,68 @@
       </span>
     </span>
     <div class="current-query-item">
-        <md-checkbox ng-click="queryCtrl.selectedQuery.currentItem.updateSelectionStatus()"
-        ng-checked="queryCtrl.selectedQuery.currentItem.checked"
-        md-indeterminate="queryCtrl.selectedQuery.currentItem.indeterminate"
-        ng-disabled="queryCtrl.selectedQuery.currentItem.complex"
+      <md-checkbox ng-click="queryCtrl.selectedQuery.currentItem.updateSelectionStatus()" ng-checked="queryCtrl.selectedQuery.currentItem.checked"
+        md-indeterminate="queryCtrl.selectedQuery.currentItem.indeterminate" ng-disabled="queryCtrl.selectedQuery.currentItem.complex"
         class="margin-fix"></md-checkbox>
-        <span class="query-item-name">{{queryCtrl.selectedQuery.currentItem.name}}</span>
-        <span ng-if="queryCtrl.selectedQuery.currentItem.args.length > 0" class="query-item-args">(
-          <span ng-repeat="arg in queryCtrl.selectedQuery.currentItem.args" ng-class="{indent: queryCtrl.selectedQuery.currentItem.args.length > 1}">
-            <br ng-if="queryCtrl.selectedQuery.currentItem.args.length > 1">
-            <span class="argument-name">{{arg.info.name}}</span> :
-            <input type="text" class="plain" ng-model="arg.value">
-          </span>
-          <br ng-if="queryCtrl.selectedQuery.currentItem.args.length > 1"> )
+      <span class="query-item-name">{{queryCtrl.selectedQuery.currentItem.name}}</span>
+      <span ng-if="queryCtrl.selectedQuery.currentItem.args.length > 0" class="query-item-args">(
+        <span ng-repeat="arg in queryCtrl.selectedQuery.currentItem.args" ng-class="{indent: queryCtrl.selectedQuery.currentItem.args.length > 1}">
+          <br ng-if="queryCtrl.selectedQuery.currentItem.args.length > 1">
+          <span class="argument-name">{{arg.info.name}}</span> :
+          <input type="text" class="plain" ng-model="arg.value" ng-change="queryCtrl.onChange()">
         </span>
-        <span ng-if="queryCtrl.selectedQuery.currentItem.fields.length > 0">
-          {
-          <div class="indent-large">
-            <div ng-repeat="field in queryCtrl.selectedQuery.currentItem.fields">
-              <md-checkbox ng-click="queryCtrl.selectedQuery.currentItem.selectField(field)" ng-checked="field.queryItem.checked" md-indeterminate="field.queryItem.indeterminate" ng-disabled="field.queryItem.complex"></md-checkbox>
-              <span ng-click="field.queryItem.complex && queryCtrl.openField(field)" ng-class="{'fake-link': field.queryItem.complex}">{{field.name}}</span>
-              <!--{{field.queryItem.args}}-->
-            </div>
+        <br ng-if="queryCtrl.selectedQuery.currentItem.args.length > 1"> )
+      </span>
+      <span ng-if="queryCtrl.selectedQuery.currentItem.fields.length > 0">
+        {
+        <div class="indent-large">
+          <div ng-repeat="field in queryCtrl.selectedQuery.currentItem.fields" ng-click="queryCtrl.clickField(field)" class="query-item-field">
+            <md-checkbox class="margin-fix" ng-checked="field.queryItem.checked" md-indeterminate="field.queryItem.indeterminate" ng-disabled="field.queryItem.complex">
+            </md-checkbox>
+            <span ng-class="{'fake-link': field.queryItem.complex}">{{field.name}}</span>
+            <!--{{field.queryItem.args}}-->
           </div>
-          }
-        </span>
+        </div>
+        }
+      </span>
     </div>
 
   </div>
-  <div layout="column" class="type-info content md-whiteframe-4dp query-string" layout-padding flex="35">{{queryCtrl.selectedQuery.root.toGQL("  ")}}<br><br>{{queryCtrl.selectedQuery.root.toObject()}}</div>
+  <div layout="column" class="type-info content md-whiteframe-4dp" ng-class="{hidden: !queryCtrl.selectedQuery}" layout-padding
+    flex="35">
+    <div flex="none" layout="column">
+      <h3>Variables</h3>
+      <div flex="none" ng-repeat="variable in queryCtrl.selectedQuery.collectedVariables" layout="row" layout-align="space-between center">
+        <div flex="30" layout="row" layout-align="start center">
+          <span flex>{{variable.value}}:</span>
+        </div>
+        <div flex="30" ng-if="variable.info.type.kind !== 'ENUM'">
+          <input type="text" class="plain" ng-model="queryCtrl.selectedQuery.variables[variable.value]" ng-change="queryCtrl.onChange()">
+        </div>
+        <div flex="30" ng-if="variable.info.type.kind === 'ENUM'">
+          <md-select class="compact" ng-model="queryCtrl.selectedQuery.variables[variable.value]">
+            <md-option ng-repeat="enumValue in queryCtrl.getEnumValues(variable.info.type)" ng-value="enumValue.name">
+              {{enumValue.name}}
+            </md-option>
+          </md-select>
+        </div>
+        <div flex="30" layout="row" layout-align="start center">
+          <span gql-type="variable.info.type" flex></span>
+        </div>
+      </div>
+      <div flex="none">
+        <md-button class="md-primary md-raised" ng-click="queryCtrl.testQuery($event, queryCtrl.selectedQuery)">Test</md-button>
+      </div>
+      <div flex="none">
+        <md-input-container class="wide-input-container">
+          <input type="password" placeholder="Auth key" ng-model="queryCtrl.authToken" ng-change="queryCtrl.saveAuth()">
+        </md-input-container>
+        <md-checkbox class="margin-fix" ng-model="queryCtrl.storeToken" ng-change="queryCtrl.saveAuth()">Store token
+          <md-icon class="md-warn">
+            <md-tooltip>This poses a potential security issue. Do not enable on public computers</md-tooltip>warning</md-icon>
+        </md-checkbox>
+      </div>
+    </div>
+    <p flex="none" class="query-string">{{queryCtrl.selectedQuery.root.toGQL(" ", queryCtrl.useVariables ? queryCtrl.selectedQuery.variables : {})}}</p>
+  </div>
 </div>

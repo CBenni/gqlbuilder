@@ -12,6 +12,10 @@ md-list.md-dense md-list-item::before, md-list.md-dense md-list-item .md-list-it
 }
 
 md-checkbox.margin-fix {
-  margin-bottom: 8px;
-  margin-top: 8px;
+  margin-bottom: 4px;
+  margin-top: 4px;
+}
+
+md-input-container .md-errors-spacer {
+  min-height: 0;
 }

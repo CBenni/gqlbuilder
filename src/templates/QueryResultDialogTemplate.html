@@ -1,0 +1,20 @@
+<md-dialog>
+  <md-toolbar>
+    <div class="md-toolbar-tools">
+      <h2>Query result</h2>
+      <span flex></span>
+      <md-button class="md-icon-button" ng-click="dialogCtrl.cancel()">
+        <md-icon aria-label="Close dialog">close</md-icon>
+      </md-button>
+    </div>
+  </md-toolbar>
+  <md-dialog-content>
+    <div class="md-dialog-content query-string">{{dialogCtrl.queryResult}}</div>
+  </md-dialog-content>
+  <md-dialog-actions layout="row">
+    <span flex></span>
+    <md-button ng-click="dialogCtrl.hide()">
+      Close
+    </md-button>
+  </md-dialog-actions>
+</md-dialog>

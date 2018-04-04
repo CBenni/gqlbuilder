@@ -16,13 +16,13 @@
     <md-tab md-active="mainCtrl.$state.includes('types')">
       <md-tab-label>Types</md-tab-label>
       <md-tab-body layout="column">
-        <div ng-include src="'/pages/TypeInfo.html'" flex="100" layout="column" class="fullheight"></div>
+        <div ng-include src="typeInfoPartial" flex="100" layout="column" class="fullheight"></div>
       </md-tab-body>
     </md-tab>
     <md-tab md-active="mainCtrl.$state.includes('queries')">
       <md-tab-label>Query Builder</md-tab-label>
       <md-tab-body layout="column">
-        <div ng-include src="'/pages/QueryBuilder.html'" flex="100" layout="column" class="fullheight"></div>
+        <div ng-include src="queryBuilderPartial" flex="100" layout="column" class="fullheight"></div>
       </md-tab-body>
     </md-tab>
   </md-tabs>

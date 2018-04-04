@@ -5,12 +5,12 @@ const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 /* global __dirname */
-
+console.log(`Building ${process.env.NODE_ENV}`);
 const config = {
   entry: ['babel-polyfill', './src/js/index.js'], // './src/index.js'],
   output: {
     path: path.resolve(__dirname, 'dist'),
-    publicPath: '/',
+    publicPath: (process.env.NODE_ENV !== 'production') ? '/' : '/static/gql/',
     filename: '[name].[chunkhash].js'
   },
   devtool: 'source-map',
@@ -80,8 +80,8 @@ const config = {
   ]
 };
 
-if (process.env.NODE_ENV === 'production') {
+/* if (process.env.NODE_ENV === 'production') {
   config.plugins.push(new webpack.optimize.UglifyJsPlugin({ minimize: true }));
-}
+} */
 
 module.exports = config;

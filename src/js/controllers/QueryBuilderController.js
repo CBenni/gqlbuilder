@@ -1,5 +1,7 @@
 import _ from 'lodash';
 
+import queryResultDialogTemplate from '../../templates/QueryResultDialogTemplate.html';
+
 function flattenType(gqlType) {
   if (gqlType.possibleTypes) {
     gqlType.possibleTypes = _.map(gqlType.possibleTypes, flattenType);
@@ -8,19 +10,52 @@ function flattenType(gqlType) {
   return gqlType;
 }
 
-function indentBy(str, indent) {
-  if (indent) return `${indent + str}\n`;
-  return str;
+function marshalAsType(string, type) {
+  if (type.kind === 'LIST') {
+    let list;
+    try {
+      list = JSON.parse(string);
+    } catch (err) {
+      list = _.filter(string.split(/\W/g));
+    }
+    return _.map(list, listItem => marshalAsType(listItem, type.ofType));
+  } else if (type.kind === 'NON_NULL') {
+    if (string) return marshalAsType(string, type.ofType);
+    throw new Error('Property is non-null.');
+  } else if (type.kind === 'ENUM') {
+    return string;
+  } else if (type.name === 'Int') {
+    const int = parseInt(string, 10);
+    if (Number.isNaN(int)) {
+      throw new Error('Property is not a number.');
+    } else {
+      return int;
+    }
+  } else if (type.name === 'String' || type.name === 'Cursor') {
+    return string;
+  } else {
+    try {
+      return JSON.parse(string);
+    } catch (err) {
+      return string;
+    }
+  }
 }
 
+function typeToString(type) {
+  if (type.kind === 'LIST') return `[${typeToString(type.ofType)}]`;
+  if (type.kind === 'NON_NULL') return `${typeToString(type.ofType)}!`;
+  return type.name || typeToString(type.ofType);
+}
 
 class QueryItem {
-  constructor(Controller, name, type, args, breadcrumbs, initialize) {
+  constructor(Controller, name, type, args, breadcrumbs, initialize, isRoot) {
     this.Controller = Controller;
     this.name = name;
     this.type = flattenType(type);
     this.breadcrumbs = breadcrumbs.slice(0);
     this.breadcrumbs.push(this);
+    this.isRoot = isRoot;
 
     const variableNameBase = _.map(this.breadcrumbs.slice(1), bc => bc.name).join(' ');
     this.args = _.map(args, arg => ({
@@ -57,12 +92,19 @@ class QueryItem {
   }
 
 
-  toGQL(indent) {
+  getGQLName() {
+    return (this.isRoot ? 'query ' : '') + (this.name || 'Unnamed query').replace(/\s/g, '_').replace(/\W/g, '');
+  }
+
+  toGQL(indent, variables) {
     const baseIndent = indent ? _.repeat(indent, this.breadcrumbs.length - 1) : '';
-    let res = baseIndent + this.name;
+    let res = '';
+    res = baseIndent + this.getGQLName();
+    // inject variables
+    if (this.isRoot) res += `(${this.injectVariablesToGQL()})`;
     const args = _.filter(_.map(this.args, arg => (arg.value ? `${arg.info.name}: ${arg.value}` : null)), x => x);
     if (!_.isEmpty(args)) {
-      res += `(${args.join(',')})`;
+      res += `(${args.join(',')}) `;
     }
 
     if (this.complex && this.fields.length > 0) {
@@ -70,13 +112,22 @@ class QueryItem {
       if (indent) res += '\n';
       _.each(this.fields, field => {
         if (field.queryItem && field.queryItem.isSelected()) {
-          res += `${field.queryItem.toGQL(indent)} `;
+          res += `${field.queryItem.toGQL(indent, variables)} `;
           if (indent) res += '\n';
         }
       });
       res += `${baseIndent}}`;
     }
     return res;
+  }
+
+  injectVariablesToGQL() {
+    if (!this.isRoot) throw new Error('Can only be used on the root queryItem!');
+    return _.map(this.collectVariables(), collectedVariable => {
+      const variableName = collectedVariable.value;
+      const variableType = collectedVariable.info.type;
+      return `${variableName}: ${typeToString(variableType)}`;
+    }).join(', ');
   }
 
   toObject() {
@@ -96,6 +147,23 @@ class QueryItem {
     return res;
   }
 
+  collectVariables() {
+    const vars = [];
+    _.each(this.fields, field => {
+      if (field.queryItem && field.queryItem.isSelected()) {
+        _.each(field.queryItem.args, arg => {
+          if (arg.value[0] === '$') {
+            vars.push(arg);
+          }
+        });
+        if (field.queryItem.complex) {
+          Array.prototype.push.apply(vars, field.queryItem.collectVariables());
+        }
+      }
+    });
+    return vars;
+  }
+
   isSelected() {
     return this.checked || this.indeterminate;
   }
@@ -105,7 +173,7 @@ class QueryItem {
       if (!field.queryItem.initialized) {
         return this.Controller.GQLService.getTypeInfo(field.queryItem.type).then(type => {
           field.queryItem = new QueryItem(this.Controller, field.name, type, field.queryItem.args, this.breadcrumbs, true);
-          field.queryItem.checked = true;
+          // field.queryItem.checked = true;
           field.queryItem.updateSelectionStatus();
           return field;
         });
@@ -136,20 +204,25 @@ class QueryItem {
       const parent = this.breadcrumbs[this.breadcrumbs.length - 2];
       parent.updateSelectionStatus();
     } else {
-      this.Controller.saveQueriesThrottled();
+      this.Controller.onChange();
     }
   }
 }
 
 export default class QueryBuilderController {
-  constructor($scope, GQLService) {
+  constructor($scope, $timeout, $mdDialog, GQLService) {
     'ngInject';
 
     this.mainCtrl = $scope.$parent.mainCtrl;
     this.GQLService = GQLService;
+    this.$mdDialog = $mdDialog;
+    this.$timeout = $timeout;
     this.queries = [];
+    this.authToken = localStorage.getItem('gql-authtoken') || '';
+    this.storeToken = !!this.authToken;
 
     this.selectedQuery = null;
+    this.useVariables = true;
     this.mainCtrl.typesPromise.then(() => {
       this.baseType = _.find(this.mainCtrl.types, { name: 'Query' });
       this.GQLService.getTypeInfo(this.baseType);
@@ -162,21 +235,38 @@ export default class QueryBuilderController {
   async addQuery() {
     await this.mainCtrl.typesPromise;
     const newQuery = {
-      name: 'New query',
-      root: new QueryItem(this, 'Query', this.baseType, [], [], true)
+      root: new QueryItem(this, 'New Query', this.baseType, [], [], true, true),
+      collectedVariables: [],
+      variables: {}
     };
     newQuery.currentItem = newQuery.root;
     this.queries.push(newQuery);
     this.selectedQuery = newQuery;
-    this.saveQueriesThrottled();
+    this.onChange();
   }
 
-  openField(field) {
-    const currentItem = this.selectedQuery.currentItem;
-    currentItem.selectField(field).then(() => {
-      this.selectedQuery.currentItem = field.queryItem;
-      this.saveQueriesThrottled();
+  deleteQuery($event, query) {
+    const confirm = this.$mdDialog.confirm()
+    .title('Delete query')
+    .textContent(`Are you sure you want to delete query ${query.name}.`)
+    .targetEvent($event)
+    .ok('Yes')
+    .cancel('No');
+    this.$mdDialog.show(confirm).then(() => {
+      _.pull(this.queries, query);
+      this.onChange();
     });
+  }
+
+  clickField(field) {
+    if (field.queryItem.complex) {
+      const currentItem = this.selectedQuery.currentItem;
+      currentItem.selectField(field).then(() => {
+        this.selectedQuery.currentItem = field.queryItem;
+      });
+    } else {
+      this.selectedQuery.currentItem.selectField(field);
+    }
   }
 
   saveQueries() {
@@ -184,21 +274,62 @@ export default class QueryBuilderController {
       this.queries,
       query => ({
         name: query.name,
-        obj: query.root ? query.root.toObject() : query.obj
+        obj: query.root ? query.root.toObject() : query.obj,
+        variables: query.variables
       })
     )));
   }
 
+  collectVariables(query) {
+    if (!query) return [];
+    query.collectedVariables = query.root.collectVariables();
+    _.each(query.collectedVariables, variable => {
+      if (!query.variables[variable.value]) query.variables[variable.value] = '';
+    });
+    console.log('Collected variables: ', query.collectedVariables);
+    return query.collectedVariables;
+  }
+
+  onChange() {
+    this.saveQueriesThrottled();
+    this.$timeout(() => { this.collectVariables(this.selectedQuery); }, 1);
+  }
+
   queryItemFromObject(obj, baseItem) {
-    _.each(obj.fields, fieldObject => {
+    return Promise.all(_.map(obj.fields, fieldObject => {
       const field = _.find(baseItem.fields, { name: fieldObject.name });
-      baseItem.selectField(field).then(fieldInfo => {
+      return baseItem.selectField(field).then(fieldInfo => {
         _.each(fieldObject.args, argObj => {
           const arg = _.find(fieldInfo.queryItem.args, argument => argument.info.name === argObj.name);
           arg.value = argObj.value;
         });
-        this.queryItemFromObject(fieldObject, fieldInfo.queryItem);
+        return this.queryItemFromObject(fieldObject, fieldInfo.queryItem);
       });
+    }));
+  }
+
+  testQuery($event, query) {
+    const marshaledVariables = {};
+    _.each(query.collectedVariables, variableInfo => {
+      marshaledVariables[variableInfo.value] = marshalAsType(query.variables[variableInfo.value], variableInfo.info.type);
+    });
+    console.log('Marshaled variables: ', marshaledVariables);
+    const queryResultPromise = this.GQLService.gqlQuery(
+      `${query.root.toGQL('  ', {})} `,
+      marshaledVariables,
+      { Authorization: this.authToken && `OAuth ${this.authToken}` }
+    )
+    .then(data => JSON.stringify(data, null, 2));
+    this.$mdDialog.show({
+      controller: 'DialogController',
+      template: queryResultDialogTemplate,
+      targetEvent: $event,
+      clickOutsideToClose: true,
+      resolve: {
+        queryResult: () => queryResultPromise
+      },
+      bindToController: true,
+      controllerAs: 'dialogCtrl'
     });
   }
 
@@ -210,16 +341,35 @@ export default class QueryBuilderController {
     }
   }
 
+  getEnumValues(type) {
+    if (type.enumValues) return type.enumValues;
+    if (type.infoPromise) return null;
+    type.infoPromise = this.GQLService.getTypeInfo(type);
+    return null;
+  }
+
   async selectQuery(query) {
     if (query.root) {
       // this is a fully qualified query.
       this.selectedQuery = query;
     } else {
       // lazy load the query.
-      query.root = new QueryItem(this, 'Query', this.baseType, [], [], true);
+      this.selectedQuery = null;
+      query.root = new QueryItem(this, query.obj.name, this.baseType, [], [], true, true);
       await this.queryItemFromObject(query.obj, query.root);
       query.currentItem = query.root;
+      query.collectedVariables = [];
+      if (!query.variables) query.variables = {};
       this.selectedQuery = query;
+      this.collectVariables(query);
+    }
+  }
+
+  saveAuth() {
+    if (this.storeToken) {
+      localStorage.setItem('gql-authtoken', this.authToken);
+    } else {
+      localStorage.removeItem('gql-authtoken');
     }
   }
 }
