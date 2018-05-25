@@ -31,6 +31,7 @@
     "class-methods-use-this": "off",
     "prefer-destructuring": "off",
     "no-mixed-operators": "off",
+    "no-console": "off",
     "max-len": [
       1,
       150

@@ -1,6 +1,26 @@
 import _ from 'lodash';
+import angular from 'angular';
+
 import DialogController from './DialogController';
-import { flattenType } from './QueryBuilderController';
+import { flattenNonNull, flattenType } from './QueryBuilderController';
+
+function replaceScalars(obj) {
+  if (typeof (obj) !== 'object') return obj;
+  _.each(obj, (val, key) => {
+    if (val.$scalar) {
+      obj[key] = val.$scalar;
+    } else {
+      replaceScalars(val);
+    }
+  });
+  return obj;
+}
+
+function wrapScalars(list) {
+  return _.each(list, (val, key) => {
+    list[key] = { $scalar: val };
+  });
+}
 
 export default class EditVariableController extends DialogController {
   constructor($scope, $mdDialog) {
@@ -14,19 +34,75 @@ export default class EditVariableController extends DialogController {
       this.values = JSON.parse(this.variables[this.variable.value]);
       console.log('Parsed variable value:', this.values);
     } catch (err) {
-      console.error(err);
+      if (this.variables[this.variable.value]) console.error(err);
       this.values = {};
     }
 
-    _.each(this.typeInfo.inputFields, field => {
-      field.flattenedType = flattenType(field.type);
-    });
+    this.breadcrumbs = [];
+    this.currentType = null;
+    this.currentValues = null;
 
-    console.log('Type info:', this.typeInfo);
+    this.selectItem(this.variable.value, this.typeInfo);
+  }
+
+  selectItem(name, typeInfo) {
+    this.breadcrumbs.push({ name, typeInfo });
+    this.currentType = typeInfo;
+    if (this.breadcrumbs.length > 1) {
+      const breadcrumbs = _.map(this.breadcrumbs.slice(1), breadcrumb => breadcrumb.name);
+      this.currentValues = _.get(this.values, breadcrumbs);
+      if (!this.currentValues) {
+        let values = {};
+        if (this.currentType.kind === 'LIST') values = [];
+        _.set(this.values, breadcrumbs, values);
+        this.currentValues = values;
+      }
+    } else this.currentValues = this.values;
+    console.log('Current values: ', this.currentValues);
+
+    if (this.currentType.kind === 'LIST') {
+      const listType = flattenType(this.currentType);
+      this.listType = listType;
+      if (this.listType.kind === 'SCALAR') {
+        this.currentValues = wrapScalars(this.currentValues);
+      }
+      this.queryCtrl.GQLService.getTypeInfo(listType).then(() => {
+        _.each(listType.inputFields, field => {
+          field.flattenedType = flattenNonNull(field.type);
+        });
+        console.log('List type info:', this.listType);
+      });
+    } else {
+      this.queryCtrl.GQLService.getTypeInfo(this.currentType).then(() => {
+        _.each(typeInfo.inputFields, field => {
+          field.flattenedType = flattenNonNull(field.type);
+        });
+        console.log('Type info:', this.typeInfo);
+      });
+    }
+  }
+
+  addListItem() {
+    if (this.listType.name === 'String') this.currentValues.push({ $scalar: '' });
+    if (this.listType.name === 'Float' || this.listType.name === 'Integer') this.currentValues.push({ $scalar: 0 });
+    if (this.listType.name === 'Boolean') this.currentValues.push({ $scalar: false });
+    if (this.listType.kind === 'INPUT_OBJECT') this.currentValues.push({});
+    this.onChange();
+  }
+
+  deleteListItem(index) {
+    this.currentValues.splice(index, 1);
+    this.onChange();
+  }
+
+  selectBreadcrumb(breadcrumb, index) {
+    this.breadcrumbs.splice(index);
+    this.selectItem(breadcrumb.name, breadcrumb.typeInfo);
   }
 
   onChange() {
-    this.variables[this.variable.value] = JSON.stringify(this.values);
+    const replacedScalars = replaceScalars(angular.copy(this.values));
+    this.variables[this.variable.value] = angular.toJson(replacedScalars);
     this.queryCtrl.onChange();
   }
 }

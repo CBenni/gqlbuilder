@@ -10,25 +10,81 @@
   </md-toolbar>
   <md-dialog-content>
     <div class="md-dialog-content" layout="column">
-      <div class="list-element" layout="row" ng-repeat="field in editVarCtrl.typeInfo.inputFields">
-        <div flex="30">
+      <span class="query-breadcrumbs">
+        <span class="query-breadcrumb" ng-repeat="breadcrumb in editVarCtrl.breadcrumbs" ng-click="editVarCtrl.selectBreadcrumb(breadcrumb, $index)">
+          <span class="fake-link">{{breadcrumb.name}}</span>
+          <span class="query-breadcrumb-seperator" ng-if="!$last">&rangle;</span>
+        </span>
+      </span>
+
+      <!-- non-list elements -->
+      <div class="list-element" layout="row" ng-repeat="field in editVarCtrl.currentType.inputFields" ng-if="editVarCtrl.currentType.kind !== 'LIST'">
+        <div flex="30" ng-if="field.flattenedType.kind === 'SCALAR'">
           {{field.name}}
         </div>
+        <div flex="30" ng-if="field.flattenedType.kind !== 'SCALAR'">
+          <span class="fake-link" ng-click="editVarCtrl.selectItem(field.name, field.flattenedType)">{{field.name}}</span>
+        </div>
+
         <div flex="40" ng-if="field.flattenedType.kind === 'SCALAR'">
-          <input type="checkbox" ng-if="field.flattenedType.name === 'Boolean'" ng-model="editVarCtrl.values[field.name]" ng-change="editVarCtrl.onChange()" class="wide-input-container">
-          <input type="text" ng-if="field.flattenedType.name !== 'Boolean'" ng-model="editVarCtrl.values[field.name]" ng-change="editVarCtrl.onChange()" class="wide-input-container">
+          <input type="checkbox" ng-if="field.flattenedType.name === 'Boolean'" ng-model="editVarCtrl.currentValues[field.name]" ng-change="editVarCtrl.onChange()" class="wide-input-container">
+          <input type="text" ng-if="field.flattenedType.name !== 'Boolean'" ng-model="editVarCtrl.currentValues[field.name]" ng-change="editVarCtrl.onChange()" class="wide-input-container">
         </div>
         <div flex="40" ng-if="field.flattenedType.kind === 'ENUM'">
-          <md-select class="compact" ng-model="editVarCtrl.values[field.name]" ng-change="editVarCtrl.onChange()">
+          <md-select class="compact" ng-model="editVarCtrl.currentValues[field.name]" ng-change="editVarCtrl.onChange()">
             <md-option ng-repeat="enumValue in editVarCtrl.queryCtrl.getEnumValues(field.flattenedType)" ng-value="enumValue.name">
               {{enumValue.name}}
             </md-option>
           </md-select>
         </div>
+
         <div flex="30">
           <span gql-type="field.type"></span>
         </div>
       </div>
+
+      <!-- list elements -->
+      <div layout="column" ng-if="editVarCtrl.currentType.kind === 'LIST'">
+        <div class="list-element md-whiteframe-2dp" layout="row" ng-repeat="value in editVarCtrl.currentValues">
+          <md-button class="compact md-icon-button" ng-click="editVarCtrl.deleteListItem($index)" flex="none">
+            <md-icon>delete</md-icon>
+          </md-button>
+          <div layout="column" flex>
+              <div class="list-element" layout="row" ng-if="editVarCtrl.listType.kind === 'SCALAR'">
+                <input type="checkbox" ng-if="editVarCtrl.listType.name === 'Boolean'" ng-model="value.$scalar" ng-change="editVarCtrl.onChange()" class="wide-input-container">
+                <input type="text" ng-if="editVarCtrl.listType.name !== 'Boolean'" ng-model="value.$scalar" ng-change="editVarCtrl.onChange()" class="wide-input-container">
+              </div>
+              <div class="list-element" layout="row" ng-repeat="field in editVarCtrl.listType.inputFields" ng-if="editVarCtrl.listType.kind === 'INPUT_OBJECT'">
+                <div flex="30" ng-if="field.flattenedType.kind === 'SCALAR'">
+                  {{field.name}}
+                </div>
+                <div flex="30" ng-if="field.flattenedType.kind !== 'SCALAR'">
+                  <span class="fake-link" ng-click="editVarCtrl.selectItem(field.name, field.flattenedType)">{{field.name}}</span>
+                </div>
+
+                <div flex="40" ng-if="field.flattenedType.kind === 'SCALAR'">
+                  <input type="checkbox" ng-if="field.flattenedType.name === 'Boolean'" ng-model="value[field.name]" ng-change="editVarCtrl.onChange()" class="wide-input-container">
+                  <input type="text" ng-if="field.flattenedType.name !== 'Boolean'" ng-model="value[field.name]" ng-change="editVarCtrl.onChange()" class="wide-input-container">
+                </div>
+                <div flex="40" ng-if="field.flattenedType.kind === 'ENUM'">
+                  <md-select class="compact" ng-model="value[field.name]" ng-change="editVarCtrl.onChange()">
+                    <md-option ng-repeat="enumValue in editVarCtrl.queryCtrl.getEnumValues(field.flattenedType)" ng-value="enumValue.name">
+                      {{enumValue.name}}
+                    </md-option>
+                  </md-select>
+                </div>
+
+                <div flex="30">
+                  <span gql-type="field.type"></span>
+                </div>
+              </div>
+          </div>
+        </div>
+        <md-button class="md-primary md-raised" ng-click="editVarCtrl.addListItem()">
+          Add
+        </md-button>
+      </div>
+      <!-- end list elements -->
     </div>
   </md-dialog-content>
   <md-dialog-actions layout="row">

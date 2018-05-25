@@ -7,7 +7,20 @@ export function flattenType(gqlType) {
   if (gqlType.possibleTypes) {
     gqlType.possibleTypes = _.map(gqlType.possibleTypes, flattenType);
   }
-  if (!gqlType.name && gqlType.ofType) return flattenType(gqlType.ofType);
+  if (!gqlType.name && gqlType.ofType) {
+    const res = flattenType(gqlType.ofType);
+    res.isList = gqlType.kind === 'LIST' || res.isList;
+    return res;
+  }
+  return gqlType;
+}
+export function flattenNonNull(gqlType) {
+  if (gqlType.possibleTypes) {
+    gqlType.possibleTypes = _.map(gqlType.possibleTypes, flattenNonNull);
+  }
+  if (!gqlType.name && gqlType.ofType && gqlType.kind === 'NON_NULL') {
+    return flattenNonNull(gqlType.ofType);
+  }
   return gqlType;
 }
 
