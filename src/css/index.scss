@@ -37,6 +37,10 @@ md-list-item.selected {
   height: 100%;
 }
 
+.fullwidth {
+  width: 100%;
+}
+
 .indent {
   padding-left: 12px;
 }
@@ -82,6 +86,34 @@ input.bland {
   width: 70%;
 }
 
+.medium-dialog {
+  width: 50%;
+}
+
 .header h2 {
   margin: 20px;
+}
+
+.query-list, md-sidenav {
+  min-width: 250px;
+}
+
+.type-info {
+  min-width: 500px;
+}
+
+input {
+  max-width: 100%;
+}
+
+.error-hint {
+  color: #900;
+}
+
+.compact {
+  margin: 0;
+}
+
+.list-element {
+  padding: 8px 0;
 }

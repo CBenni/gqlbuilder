@@ -1,0 +1,40 @@
+<md-dialog class="medium-dialog">
+  <md-toolbar>
+    <div class="md-toolbar-tools">
+      <h2>Edit variable {{editVarCtrl.variable.value}}</h2>
+      <span flex></span>
+      <md-button class="md-icon-button" ng-click="editVarCtrl.cancel()">
+        <md-icon aria-label="Close dialog">close</md-icon>
+      </md-button>
+    </div>
+  </md-toolbar>
+  <md-dialog-content>
+    <div class="md-dialog-content" layout="column">
+      <div class="list-element" layout="row" ng-repeat="field in editVarCtrl.typeInfo.inputFields">
+        <div flex="30">
+          {{field.name}}
+        </div>
+        <div flex="40" ng-if="field.flattenedType.kind === 'SCALAR'">
+          <input type="checkbox" ng-if="field.flattenedType.name === 'Boolean'" ng-model="editVarCtrl.values[field.name]" ng-change="editVarCtrl.onChange()" class="wide-input-container">
+          <input type="text" ng-if="field.flattenedType.name !== 'Boolean'" ng-model="editVarCtrl.values[field.name]" ng-change="editVarCtrl.onChange()" class="wide-input-container">
+        </div>
+        <div flex="40" ng-if="field.flattenedType.kind === 'ENUM'">
+          <md-select class="compact" ng-model="editVarCtrl.values[field.name]" ng-change="editVarCtrl.onChange()">
+            <md-option ng-repeat="enumValue in editVarCtrl.queryCtrl.getEnumValues(field.flattenedType)" ng-value="enumValue.name">
+              {{enumValue.name}}
+            </md-option>
+          </md-select>
+        </div>
+        <div flex="30">
+          <span gql-type="field.type"></span>
+        </div>
+      </div>
+    </div>
+  </md-dialog-content>
+  <md-dialog-actions layout="row">
+    <span flex></span>
+    <md-button ng-click="editVarCtrl.hide()">
+      Close
+    </md-button>
+  </md-dialog-actions>
+</md-dialog>

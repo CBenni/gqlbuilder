@@ -3,6 +3,9 @@
     <md-button ng-click="queryCtrl.addQuery()" class="md-primary md-raised">
       New query
     </md-button>
+    <md-button ng-click="queryCtrl.addMutation()" class="md-primary md-raised">
+      New mutation
+    </md-button>
     <md-list class="md-dense" md-virtual-repeat-container flex="100">
       <md-list-item md-virtual-repeat="query in queryCtrl.queries | filter: {name:queryCtrl.searchText}" md-on-demand="false" ng-class="{selected: queryCtrl.selectedQuery==query}"
         ng-click="queryCtrl.selectQuery(query)">
@@ -56,28 +59,38 @@
   </div>
   <div layout="column" class="type-info content md-whiteframe-4dp" ng-class="{hidden: !queryCtrl.selectedQuery}" layout-padding
     flex="35">
-    <div flex="none" layout="column">
+    <div flex="none" layout="column" ng-if="queryCtrl.selectedQuery">
       <h3>Variables</h3>
-      <div flex="none" ng-repeat="variable in queryCtrl.selectedQuery.collectedVariables" layout="row" layout-align="space-between center">
-        <div flex="30" layout="row" layout-align="start center">
-          <span flex>{{variable.value}}:</span>
+      <div flex="none" ng-repeat="variable in queryCtrl.selectedQuery.collectedVariables" layout="column">
+        <div layout="row" flex="none" layout-align="space-between center">
+          <div flex="20" layout="row" layout-align="start center">
+            <span flex>{{variable.value}}:</span>
+          </div>
+          <div flex="40" ng-if="variable.info.flattenedType.kind !== 'ENUM'">
+            <input type="text" class="plain" ng-model="queryCtrl.selectedQuery.variables[variable.value]" ng-change="queryCtrl.onChange()">
+            <md-button class="md-icon-button md-primary" ng-click="queryCtrl.editVariable($event, variable)" ng-if="variable.info.flattenedType.kind === 'INPUT_OBJECT'">
+              <md-icon>edit</md-icon>
+            </md-button>
+          </div>
+          <div flex="40" ng-if="variable.info.flattenedType.kind === 'ENUM'">
+            <md-select class="compact" ng-model="queryCtrl.selectedQuery.variables[variable.value]">
+              <md-option ng-repeat="enumValue in queryCtrl.getEnumValues(variable.info.flattenedType)" ng-value="enumValue.name">
+                {{enumValue.name}}
+              </md-option>
+            </md-select>
+          </div>
+          <div flex="30" layout="row" layout-align="start center">
+            <span gql-type="variable.info.type" flex></span>
+          </div>
         </div>
-        <div flex="30" ng-if="variable.info.type.kind !== 'ENUM'">
-          <input type="text" class="plain" ng-model="queryCtrl.selectedQuery.variables[variable.value]" ng-change="queryCtrl.onChange()">
-        </div>
-        <div flex="30" ng-if="variable.info.type.kind === 'ENUM'">
-          <md-select class="compact" ng-model="queryCtrl.selectedQuery.variables[variable.value]">
-            <md-option ng-repeat="enumValue in queryCtrl.getEnumValues(variable.info.type)" ng-value="enumValue.name">
-              {{enumValue.name}}
-            </md-option>
-          </md-select>
-        </div>
-        <div flex="30" layout="row" layout-align="start center">
-          <span gql-type="variable.info.type" flex></span>
+        <div ng-if="queryCtrl.getMarshalError(variable)" layout="row" layout-align="space-between center">
+          <div flex="30"></div>
+          <div flex="30" class="error-hint">{{queryCtrl.getMarshalError(variable)}}</div>
+          <div flex="30"></div>
         </div>
       </div>
       <div flex="none">
-        <md-button class="md-primary md-raised" ng-click="queryCtrl.testQuery($event, queryCtrl.selectedQuery)">Test</md-button>
+        <md-button class="md-primary md-raised" ng-disabled="!queryCtrl.checkQuery(queryCtrl.selectedQuery)" ng-click="queryCtrl.testQuery($event, queryCtrl.selectedQuery)">Test</md-button>
       </div>
       <div flex="none">
         <md-input-container class="wide-input-container">

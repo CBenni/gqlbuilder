@@ -32,12 +32,6 @@ export default class {
     });
   }
 
-  selectTab(id) {
-    console.log('$state.current:', this.$state.current);
-    console.log('$stateParams:', this.$stateParams);
-    this.$state.go(id);
-  }
-
   load() {
     return this.GQLService.getAllTypes().then(types => {
       this.types = types;
@@ -53,5 +47,9 @@ export default class {
       this.selectedType = type;
       this.GQLService.getTypeInfo(type);
     });
+  }
+
+  debugLog(x) {
+    console.log('Debug log: ', x);
   }
 }

@@ -1,8 +1,9 @@
 import _ from 'lodash';
 
 import queryResultDialogTemplate from '../../templates/QueryResultDialogTemplate.html';
+import editVariableDialogTemplate from '../../templates/EditVariableDialogTemplate.html';
 
-function flattenType(gqlType) {
+export function flattenType(gqlType) {
   if (gqlType.possibleTypes) {
     gqlType.possibleTypes = _.map(gqlType.possibleTypes, flattenType);
   }
@@ -31,7 +32,7 @@ function marshalAsType(string, type) {
     } else {
       return int;
     }
-  } else if (type.name === 'String' || type.name === 'Cursor') {
+  } else if (type.name === 'String' || type.name === 'Cursor' || type.name === 'ID') {
     return string;
   } else {
     try {
@@ -62,7 +63,6 @@ class QueryItem {
       info: arg.info || arg,
       value: `$${_.camelCase(`${variableNameBase} ${arg.name || arg.info.name}`)}`
     }));
-    console.log(`Constructing ${this.name} with args:`, args);
 
     this.checked = false;
     this.indeterminate = false;
@@ -87,13 +87,11 @@ class QueryItem {
       queryItem: new QueryItem(this.Controller.GQLService, field.name, flattenType(field.type), field.args, this.breadcrumbs, false)
     }));
     this.initialized = true;
-    console.log(`Fields for ${this.name}:`, this.fields);
-    console.log(`Args for ${this.name}:`, this.args);
   }
 
 
   getGQLName() {
-    return (this.isRoot ? 'query ' : '') + (this.name || 'Unnamed query').replace(/\s/g, '_').replace(/\W/g, '');
+    return (this.isRoot ? `${this.type.name.toLowerCase()} ` : '') + (this.name || 'Unnamed query').replace(/\s/g, '_').replace(/\W/g, '');
   }
 
   toGQL(indent, variables) {
@@ -153,6 +151,7 @@ class QueryItem {
       if (field.queryItem && field.queryItem.isSelected()) {
         _.each(field.queryItem.args, arg => {
           if (arg.value[0] === '$') {
+            arg.info.flattenedType = flattenType(arg.info.type);
             vars.push(arg);
           }
         });
@@ -221,11 +220,15 @@ export default class QueryBuilderController {
     this.authToken = localStorage.getItem('gql-authtoken') || '';
     this.storeToken = !!this.authToken;
 
+    $scope.flattenType = flattenType;
+
     this.selectedQuery = null;
     this.useVariables = true;
     this.mainCtrl.typesPromise.then(() => {
       this.baseType = _.find(this.mainCtrl.types, { name: 'Query' });
+      this.baseMutation = _.find(this.mainCtrl.types, { name: 'Mutation' });
       this.GQLService.getTypeInfo(this.baseType);
+      this.GQLService.getTypeInfo(this.baseMutation);
       this.loadQueries();
     });
 
@@ -242,6 +245,19 @@ export default class QueryBuilderController {
     newQuery.currentItem = newQuery.root;
     this.queries.push(newQuery);
     this.selectedQuery = newQuery;
+    this.onChange();
+  }
+
+  async addMutation() {
+    await this.mainCtrl.typesPromise;
+    const newMutation = {
+      root: new QueryItem(this, 'New Mutation', this.baseMutation, [], [], true, true),
+      collectedVariables: [],
+      variables: {}
+    };
+    newMutation.currentItem = newMutation.root;
+    this.queries.push(newMutation);
+    this.selectedQuery = newMutation;
     this.onChange();
   }
 
@@ -286,7 +302,6 @@ export default class QueryBuilderController {
     _.each(query.collectedVariables, variable => {
       if (!query.variables[variable.value]) query.variables[variable.value] = '';
     });
-    console.log('Collected variables: ', query.collectedVariables);
     return query.collectedVariables;
   }
 
@@ -308,12 +323,20 @@ export default class QueryBuilderController {
     }));
   }
 
+  getMarshalError(variable) {
+    try {
+      marshalAsType(this.selectedQuery.variables[variable.value], variable.info.type);
+      return null;
+    } catch (err) {
+      return `${err}`;
+    }
+  }
+
   testQuery($event, query) {
     const marshaledVariables = {};
     _.each(query.collectedVariables, variableInfo => {
       marshaledVariables[variableInfo.value] = marshalAsType(query.variables[variableInfo.value], variableInfo.info.type);
     });
-    console.log('Marshaled variables: ', marshaledVariables);
     const queryResultPromise = this.GQLService.gqlQuery(
       `${query.root.toGQL('  ', {})} `,
       marshaledVariables,
@@ -331,6 +354,18 @@ export default class QueryBuilderController {
       bindToController: true,
       controllerAs: 'dialogCtrl'
     });
+  }
+
+  checkQuery(query) {
+    const marshaledVariables = {};
+    try {
+      _.each(query.collectedVariables, variableInfo => {
+        marshaledVariables[variableInfo.value] = marshalAsType(query.variables[variableInfo.value], variableInfo.info.type);
+      });
+    } catch (err) {
+      return false;
+    }
+    return true;
   }
 
   loadQueries() {
@@ -355,7 +390,7 @@ export default class QueryBuilderController {
     } else {
       // lazy load the query.
       this.selectedQuery = null;
-      query.root = new QueryItem(this, query.obj.name, this.baseType, [], [], true, true);
+      query.root = new QueryItem(this, query.obj.name, _.find(this.mainCtrl.types, { name: query.obj.type }), [], [], true, true);
       await this.queryItemFromObject(query.obj, query.root);
       query.currentItem = query.root;
       query.collectedVariables = [];
@@ -371,5 +406,27 @@ export default class QueryBuilderController {
     } else {
       localStorage.removeItem('gql-authtoken');
     }
+  }
+
+  editVariable($event, variable) {
+    console.log('Editing variable: ', variable);
+    this.$mdDialog.show({
+      controller: 'EditVariableController',
+      template: editVariableDialogTemplate,
+      targetEvent: $event,
+      clickOutsideToClose: true,
+      resolve: {
+        typeInfo: () => this.GQLService.getTypeInfo(variable.info.flattenedType)
+      },
+      locals: {
+        variable,
+        variables: this.selectedQuery.variables,
+        queryCtrl: this
+      },
+      bindToController: true,
+      controllerAs: 'editVarCtrl'
+    }).then(() => {
+      this.onChange();
+    });
   }
 }

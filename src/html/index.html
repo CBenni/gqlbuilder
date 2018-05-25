@@ -13,13 +13,13 @@
     <h2>GQLBuilder</h2>
   </div>
   <md-tabs flex="100" md-dynamic-height="false" class="md-primary">
-    <md-tab md-active="mainCtrl.$state.includes('types')">
+    <md-tab md-active="mainCtrl.$state.includes('types')" ng-click="">
       <md-tab-label>Types</md-tab-label>
       <md-tab-body layout="column">
         <div ng-include src="typeInfoPartial" flex="100" layout="column" class="fullheight"></div>
       </md-tab-body>
     </md-tab>
-    <md-tab md-active="mainCtrl.$state.includes('queries')">
+    <md-tab md-active="mainCtrl.$state.includes('queries')" ng-click="mainCtrl.$state.go('queries')">
       <md-tab-label>Query Builder</md-tab-label>
       <md-tab-body layout="column">
         <div ng-include src="queryBuilderPartial" flex="100" layout="column" class="fullheight"></div>
