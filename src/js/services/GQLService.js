@@ -8,6 +8,7 @@ export default class GQLService {
     this.$http = $http;
 
     this.typeCache = null;
+    this.typeDetails = {};
     this.getAllTypes();
   }
 
@@ -31,12 +32,17 @@ export default class GQLService {
   }
 
   getTypeInfo(type) {
-    if (!type) return null;
+    if (!type || !type.name) return null;
     if (type.loaded) return Promise.resolve(type);
+    if (this.typeDetails[type.name]) {
+      return Promise.resolve(_.merge(type, this.typeDetails[type.name], { loaded: true }));
+    }
     if (type.kind === 'ENUM') {
       return this.gqlQuery(`{__type(name: "${type.name}") { name enumValues{ name description } description }}`).then(body => {
         console.log(`Received GQL type response for ${type.name}: `, body);
         _.merge(type, body.data.__type);
+        this.typeDetails[type.name] = body.data.__type;
+        type.loaded = true;
         return type;
       });
     }
@@ -79,6 +85,8 @@ export default class GQLService {
       }`).then(body => {
         console.log(`Received GQL type response for ${type.name}: `, body);
         _.merge(type, body.data.__type);
+        type.loaded = true;
+        this.typeDetails[type.name] = body.data.__type;
         return type;
       });
     }
@@ -117,6 +125,7 @@ export default class GQLService {
         console.log(`Received GQL type response for ${type.name}: `, body);
         _.merge(type, body.data.__type);
         type.loaded = true;
+        this.typeDetails[type.name] = body.data.__type;
         return type;
       });
     }
@@ -165,6 +174,7 @@ export default class GQLService {
       console.log(`Received GQL type response for ${type.name}: `, body);
       _.merge(type, body.data.__type);
       type.loaded = true;
+      this.typeDetails[type.name] = body.data.__type;
       return type;
     });
   }

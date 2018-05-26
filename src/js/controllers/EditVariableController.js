@@ -2,13 +2,13 @@ import _ from 'lodash';
 import angular from 'angular';
 
 import DialogController from './DialogController';
-import { flattenNonNull, flattenType } from './QueryBuilderController';
+import { flattenNonNull, flattenType, marshalAsType } from './QueryBuilderController';
 
 function replaceScalars(obj) {
   if (typeof (obj) !== 'object') return obj;
   _.each(obj, (val, key) => {
     if (val.$scalar) {
-      obj[key] = val.$scalar;
+      obj[key] = marshalAsType(val.$scalar, { kind: 'SCALAR', name: val.$type });
     } else {
       replaceScalars(val);
     }
@@ -16,9 +16,9 @@ function replaceScalars(obj) {
   return obj;
 }
 
-function wrapScalars(list) {
+function wrapScalars(list, type) {
   return _.each(list, (val, key) => {
-    list[key] = { $scalar: val };
+    list[key] = { $scalar: val, $type: type };
   });
 }
 
@@ -64,7 +64,7 @@ export default class EditVariableController extends DialogController {
       const listType = flattenType(this.currentType);
       this.listType = listType;
       if (this.listType.kind === 'SCALAR') {
-        this.currentValues = wrapScalars(this.currentValues);
+        this.currentValues = wrapScalars(this.currentValues, this.listType.name);
       }
       this.queryCtrl.GQLService.getTypeInfo(listType).then(() => {
         _.each(listType.inputFields, field => {
@@ -80,12 +80,13 @@ export default class EditVariableController extends DialogController {
         console.log('Type info:', this.typeInfo);
       });
     }
+    this.onChange();
   }
 
   addListItem() {
-    if (this.listType.name === 'String') this.currentValues.push({ $scalar: '' });
-    if (this.listType.name === 'Float' || this.listType.name === 'Integer') this.currentValues.push({ $scalar: 0 });
-    if (this.listType.name === 'Boolean') this.currentValues.push({ $scalar: false });
+    if (this.listType.name === 'String') this.currentValues.push({ $scalar: '', $type: this.listType.name });
+    if (this.listType.name === 'Float' || this.listType.name === 'Integer') this.currentValues.push({ $scalar: 0, $type: this.listType.name });
+    if (this.listType.name === 'Boolean') this.currentValues.push({ $scalar: false, $type: this.listType.name });
     if (this.listType.kind === 'INPUT_OBJECT') this.currentValues.push({});
     this.onChange();
   }
@@ -100,9 +101,19 @@ export default class EditVariableController extends DialogController {
     this.selectItem(breadcrumb.name, breadcrumb.typeInfo);
   }
 
-  onChange() {
+  async onChange() {
     const replacedScalars = replaceScalars(angular.copy(this.values));
-    this.variables[this.variable.value] = angular.toJson(replacedScalars);
-    this.queryCtrl.onChange();
+    let marshaled = null;
+    // check the item by trying to marshal it.
+    try {
+      marshaled = await this.queryCtrl.marshalAsComplex(replacedScalars, this.typeInfo, this.variable.value);
+      this.error = null;
+    } catch (err) {
+      this.error = err.toString();
+    }
+    if (marshaled) {
+      this.variables[this.variable.value] = angular.toJson(marshaled);
+      this.queryCtrl.onChange();
+    }
   }
 }

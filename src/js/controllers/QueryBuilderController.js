@@ -24,7 +24,7 @@ export function flattenNonNull(gqlType) {
   return gqlType;
 }
 
-function marshalAsType(string, type) {
+export function marshalAsType(string, type) {
   if (type.kind === 'LIST') {
     let list;
     try {
@@ -40,6 +40,13 @@ function marshalAsType(string, type) {
     return string;
   } else if (type.name === 'Int') {
     const int = parseInt(string, 10);
+    if (Number.isNaN(int)) {
+      throw new Error('Property is not a number.');
+    } else {
+      return int;
+    }
+  } else if (type.name === 'Float') {
+    const int = parseFloat(string);
     if (Number.isNaN(int)) {
       throw new Error('Property is not a number.');
     } else {
@@ -441,5 +448,69 @@ export default class QueryBuilderController {
     }).then(() => {
       this.onChange();
     });
+  }
+
+  async marshalAsComplex(obj, type, breadcrumbs) {
+    let typeInfo = type;
+    if (type.kind !== 'NON_NULL' && type.kind !== 'SCALAR') {
+      typeInfo = await this.GQLService.getTypeInfo(type);
+    }
+    // console.log('Marshaling', obj, 'to', type);
+    if (typeInfo.kind === 'NON_NULL') {
+      if (!obj) throw new Error(`${breadcrumbs} shouldnt be null!`);
+      return this.marshalAsComplex(obj, typeInfo.ofType, breadcrumbs);
+    } else if (typeInfo.kind === 'SCALAR') {
+      if (!obj) return undefined;
+      if (typeInfo.name === 'Int' || typeInfo.name === 'Float' || typeInfo.name === 'Double') {
+        const num = typeInfo.name === 'Int' ? parseInt(obj, 10) : parseFloat(obj);
+        if (Number.isNaN(num)) {
+          throw new Error(`${breadcrumbs} is not a number.`);
+        } else {
+          return num;
+        }
+      } else if (typeInfo.name === 'String' || typeInfo.name === 'Cursor' || typeInfo.name === 'ID') {
+        return `${obj}`;
+      } else {
+        return obj;
+      }
+    } else if (typeInfo.kind === 'ENUM') {
+      if (!obj) return undefined;
+      if (!typeInfo.enumValues.includes(obj)) {
+        throw new Error(`Invalid enum value for ${breadcrumbs}`);
+      }
+      return obj;
+    } else if (typeInfo.kind === 'LIST') {
+      if (!obj) return undefined;
+      if (!_.isArrayLikeObject(obj)) {
+        try {
+          obj = JSON.parse(obj);
+        } catch (err) {
+          // noop
+        }
+      }
+      if (_.isArrayLikeObject(obj)) {
+        const innerType = this.GQLService.getTypeInfo(typeInfo.ofType);
+        return Promise.all(_.map(obj, (item, index) => this.marshalAsComplex(item, innerType, `${breadcrumbs}[${index}]`)));
+      }
+      throw new Error(`${breadcrumbs} is an invalid list`);
+    } else if (typeInfo.kind === 'INPUT_OBJECT') {
+      if (!obj) return undefined;
+      if (!_.isObjectLike(obj)) {
+        try {
+          obj = JSON.parse(obj);
+        } catch (err) {
+          // noop
+        }
+      }
+      if (_.isObjectLike(obj)) {
+        _.each(obj, (val, key) => {
+          if (!_.find(typeInfo.inputFields, { name: key })) throw new Error(`Unknown field ${breadcrumbs} ⟩ ${key}`);
+        });
+        return Promise.all(_.map(typeInfo.inputFields, async field => {
+          obj[field.name] = await this.marshalAsComplex(obj[field.name], field.type, `${breadcrumbs} ⟩ ${field.name}`);
+        })).then(() => obj);
+      }
+      throw new Error(`Invalid input object: ${obj}`);
+    } else return obj;
   }
 }

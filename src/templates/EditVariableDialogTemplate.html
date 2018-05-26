@@ -85,6 +85,9 @@
         </md-button>
       </div>
       <!-- end list elements -->
+      <div class="error-hint" ng-if="editVarCtrl.error">
+        {{editVarCtrl.error}}
+      </div>
     </div>
   </md-dialog-content>
   <md-dialog-actions layout="row">
