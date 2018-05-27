@@ -26,7 +26,7 @@ export function flattenNonNull(gqlType) {
 
 export function marshalAsType(string, type) {
   if (type.kind === 'LIST') {
-    let list;
+    let list = null;
     try {
       list = JSON.parse(string);
     } catch (err) {

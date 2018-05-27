@@ -3,6 +3,7 @@ const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const Uglify = require('uglifyjs-webpack-plugin');
 
 /* global __dirname */
 console.log(`Building ${process.env.NODE_ENV}`);
@@ -80,8 +81,8 @@ const config = {
   ]
 };
 
-/* if (process.env.NODE_ENV === 'production') {
-  config.plugins.push(new webpack.optimize.UglifyJsPlugin({ minimize: true }));
-} */
+if (process.env.NODE_ENV === 'production') {
+  config.plugins.push(new Uglify({ sourceMap: true }));
+}
 
 module.exports = config;
