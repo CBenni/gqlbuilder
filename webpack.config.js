@@ -7,7 +7,7 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 /* global __dirname */
 console.log(`Building ${process.env.NODE_ENV}`);
 const config = {
-  entry: ['babel-polyfill', './src/js/index.js'], // './src/index.js'],
+  entry: ['./src/js/index.js'], // './src/index.js'],
   output: {
     path: path.resolve(__dirname, 'dist'),
     publicPath: (process.env.NODE_ENV !== 'production') ? '/' : '/static/gql/',
@@ -22,8 +22,8 @@ const config = {
         use: {
           loader: 'babel-loader',
           options: {
-            presets: ['env'],
-            plugins: ['angularjs-annotate', 'babel-polyfill']
+            presets: [['env', { targets: { browsers: ['chrome >= 60'] } }]],
+            plugins: ['angularjs-annotate']
           }
         }
       },

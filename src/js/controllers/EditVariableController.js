@@ -23,12 +23,17 @@ function wrapScalars(list, type) {
 }
 
 export default class EditVariableController extends DialogController {
-  constructor($scope, $mdDialog) {
+  constructor($scope, $mdDialog, typeInfo, variable, variables, queryCtrl) {
     'ngInject';
 
     super($scope, $mdDialog);
 
     this.$scope = $scope;
+
+    this.typeInfo = typeInfo;
+    this.variable = variable;
+    this.variables = variables;
+    this.queryCtrl = queryCtrl;
 
     try {
       this.values = JSON.parse(this.variables[this.variable.value]);
@@ -109,6 +114,7 @@ export default class EditVariableController extends DialogController {
       marshaled = await this.queryCtrl.marshalAsComplex(replacedScalars, this.typeInfo, this.variable.value);
       this.error = null;
     } catch (err) {
+      marshaled = await this.queryCtrl.marshalAsComplex(replacedScalars, this.typeInfo, this.variable.value, true);
       this.error = err.toString();
     }
     if (marshaled) {

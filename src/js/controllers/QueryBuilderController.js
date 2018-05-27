@@ -443,27 +443,27 @@ export default class QueryBuilderController {
         variables: this.selectedQuery.variables,
         queryCtrl: this
       },
-      bindToController: true,
+      bindToController: false,
       controllerAs: 'editVarCtrl'
     }).then(() => {
       this.onChange();
     });
   }
 
-  async marshalAsComplex(obj, type, breadcrumbs) {
+  async marshalAsComplex(obj, type, breadcrumbs, ignoreErrors) {
     let typeInfo = type;
-    if (type.kind !== 'NON_NULL' && type.kind !== 'SCALAR') {
+    if (type.name !== null) {
       typeInfo = await this.GQLService.getTypeInfo(type);
     }
     // console.log('Marshaling', obj, 'to', type);
     if (typeInfo.kind === 'NON_NULL') {
-      if (!obj) throw new Error(`${breadcrumbs} shouldnt be null!`);
-      return this.marshalAsComplex(obj, typeInfo.ofType, breadcrumbs);
+      if ((!obj || obj.length === 0) && !ignoreErrors) throw new Error(`${breadcrumbs} shouldnt be null!`);
+      return this.marshalAsComplex(obj, typeInfo.ofType, breadcrumbs, ignoreErrors);
     } else if (typeInfo.kind === 'SCALAR') {
       if (!obj) return undefined;
       if (typeInfo.name === 'Int' || typeInfo.name === 'Float' || typeInfo.name === 'Double') {
         const num = typeInfo.name === 'Int' ? parseInt(obj, 10) : parseFloat(obj);
-        if (Number.isNaN(num)) {
+        if (Number.isNaN(num) && !ignoreErrors) {
           throw new Error(`${breadcrumbs} is not a number.`);
         } else {
           return num;
@@ -475,7 +475,7 @@ export default class QueryBuilderController {
       }
     } else if (typeInfo.kind === 'ENUM') {
       if (!obj) return undefined;
-      if (!typeInfo.enumValues.includes(obj)) {
+      if (!_.find(typeInfo.enumValues, { name: obj }) && !ignoreErrors) {
         throw new Error(`Invalid enum value for ${breadcrumbs}`);
       }
       return obj;
@@ -489,10 +489,10 @@ export default class QueryBuilderController {
         }
       }
       if (_.isArrayLikeObject(obj)) {
-        const innerType = this.GQLService.getTypeInfo(typeInfo.ofType);
-        return Promise.all(_.map(obj, (item, index) => this.marshalAsComplex(item, innerType, `${breadcrumbs}[${index}]`)));
+        const innerType = typeInfo.ofType;
+        return Promise.all(_.map(obj, (item, index) => this.marshalAsComplex(item, innerType, `${breadcrumbs}[${index}]`, ignoreErrors)));
       }
-      throw new Error(`${breadcrumbs} is an invalid list`);
+      if (!ignoreErrors) throw new Error(`${breadcrumbs} is an invalid list`);
     } else if (typeInfo.kind === 'INPUT_OBJECT') {
       if (!obj) return undefined;
       if (!_.isObjectLike(obj)) {
@@ -504,13 +504,14 @@ export default class QueryBuilderController {
       }
       if (_.isObjectLike(obj)) {
         _.each(obj, (val, key) => {
-          if (!_.find(typeInfo.inputFields, { name: key })) throw new Error(`Unknown field ${breadcrumbs} ⟩ ${key}`);
+          if (!_.find(typeInfo.inputFields, { name: key }) && !ignoreErrors) throw new Error(`Unknown field ${breadcrumbs} ⟩ ${key}`);
         });
         return Promise.all(_.map(typeInfo.inputFields, async field => {
-          obj[field.name] = await this.marshalAsComplex(obj[field.name], field.type, `${breadcrumbs} ⟩ ${field.name}`);
+          obj[field.name] = await this.marshalAsComplex(obj[field.name], field.type, `${breadcrumbs} ⟩ ${field.name}`, ignoreErrors);
         })).then(() => obj);
       }
-      throw new Error(`Invalid input object: ${obj}`);
+      if (!ignoreErrors) throw new Error(`Invalid input object: ${obj}`);
     } else return obj;
+    return null;
   }
 }
