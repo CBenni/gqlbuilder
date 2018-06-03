@@ -103,10 +103,11 @@ class QueryItem {
       const fields = _.flatten(_.map(types, _type => flattenType(_type).fields));
       _.each(fields, field => { field.type = flattenType(field.type); });
       this.type.fields = _.uniqBy(fields, duplicateType => `${duplicateType.name}:${duplicateType.type.name}`);
+      this.Controller.$timeout();
     }
     this.fields = _.map(this.type.fields, field => ({
       name: field.name,
-      queryItem: new QueryItem(this.Controller.GQLService, field.name, flattenType(field.type), field.args, this.breadcrumbs, false)
+      queryItem: new QueryItem(this.Controller, field.name, flattenType(field.type), field.args, this.breadcrumbs, false)
     }));
     this.initialized = true;
   }
@@ -237,6 +238,7 @@ export default class QueryBuilderController {
     this.mainCtrl = $scope.$parent.mainCtrl;
     this.GQLService = GQLService;
     this.$mdDialog = $mdDialog;
+    this.$scope = $scope;
     this.$timeout = $timeout;
     this.queries = [];
     this.authToken = localStorage.getItem('gql-authtoken') || '';
