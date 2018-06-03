@@ -39,6 +39,7 @@ export function marshalAsType(string, type) {
   } else if (type.kind === 'ENUM') {
     return string;
   } else if (type.name === 'Int') {
+    if (string === '') return undefined;
     const int = parseInt(string, 10);
     if (Number.isNaN(int)) {
       throw new Error('Property is not a number.');
@@ -46,6 +47,7 @@ export function marshalAsType(string, type) {
       return int;
     }
   } else if (type.name === 'Float') {
+    if (string === '') return undefined;
     const int = parseFloat(string);
     if (Number.isNaN(int)) {
       throw new Error('Property is not a number.');
@@ -97,7 +99,7 @@ class QueryItem {
 
   async initialize() {
     if (this.type.possibleTypes) {
-      const types = await Promise.all(_.map(this.type.possibleTypes, possibleType => this.GQLService.getTypeInfo(possibleType)));
+      const types = await Promise.all(_.map(this.type.possibleTypes, possibleType => this.Controller.GQLService.getTypeInfo(possibleType)));
       const fields = _.flatten(_.map(types, _type => flattenType(_type).fields));
       _.each(fields, field => { field.type = flattenType(field.type); });
       this.type.fields = _.uniqBy(fields, duplicateType => `${duplicateType.name}:${duplicateType.type.name}`);
