@@ -1,8 +1,8 @@
 {
-  "name": "mt2",
+  "name": "gqlbuilder",
   "version": "1.0.0",
   "main": "index.js",
-  "repository": "https://github.com/CBenni/mt2",
+  "repository": "https://github.com/CBenni/gqlbuilder",
   "author": "CBenni <levelcarnage@gmail.com>",
   "license": "MIT",
   "scripts": {
