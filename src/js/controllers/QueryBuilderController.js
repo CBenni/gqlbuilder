@@ -361,22 +361,31 @@ export default class QueryBuilderController {
     _.each(query.collectedVariables, variableInfo => {
       marshaledVariables[variableInfo.value] = marshalAsType(query.variables[variableInfo.value], variableInfo.info.type);
     });
-    const queryResultPromise = this.GQLService.gqlQuery(
+    this.GQLService.gqlQuery(
       `${query.root.toGQL('  ', {})} `,
       marshaledVariables,
       { Authorization: this.authToken && `OAuth ${this.authToken}` }
     )
-    .then(data => JSON.stringify(data, null, 2));
-    this.$mdDialog.show({
-      controller: 'DialogController',
-      template: queryResultDialogTemplate,
-      targetEvent: $event,
-      clickOutsideToClose: true,
-      resolve: {
-        queryResult: () => queryResultPromise
-      },
-      bindToController: true,
-      controllerAs: 'dialogCtrl'
+    .then(data => {
+      const result = JSON.stringify(data, null, 2);
+      this.$mdDialog.show({
+        controller($scope, $mdDialog) {
+          this.hide = () => {
+            $mdDialog.hide();
+          };
+          this.cancel = () => {
+            $mdDialog.cancel();
+          };
+        },
+        template: queryResultDialogTemplate,
+        targetEvent: $event,
+        clickOutsideToClose: true,
+        locals: {
+          queryResult: result
+        },
+        bindToController: true,
+        controllerAs: 'dialogCtrl'
+      });
     });
   }
 
