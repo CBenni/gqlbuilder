@@ -35,7 +35,7 @@
     "webpack-dev-server": "^3.1.11"
   },
   "dependencies": {
-    "angular": "^1.6.9",
+    "angular": "^1.8.0",
     "angular-animate": "^1.6.9",
     "angular-aria": "^1.6.9",
     "angular-cookies": "^1.6.9",
