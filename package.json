@@ -45,7 +45,7 @@
     "apollo-boost": "^0.1.4",
     "graphql": "^0.13.2",
     "graphql-tag": "^2.8.0",
-    "lodash": "^4.17.5",
+    "lodash": "^4.17.19",
     "mime": "^2.2.0",
     "node-sass": "^4.8.1"
   }
