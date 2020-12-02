@@ -5,18 +5,18 @@ import angularAria from 'angular-aria';
 import angularCookies from 'angular-cookies';
 import angularUIRouter from 'angular-ui-router';
 
-import MainController from './controllers/MainController';
-import QueryBuilderController from './controllers/QueryBuilderController';
-import GQLService from './services/GQLService';
-import GQLTypeDirective from './directives/GQLTypeDirective';
-import GQLQueryItemDirective from './directives/GQLQueryItemDirective';
-import DialogController from './controllers/DialogController';
-import EditVariableController from './controllers/EditVariableController';
-import { typeList, typeState, queryList, queryState } from './states';
+import MainController from './js/controllers/MainController';
+import QueryBuilderController from './js/controllers/QueryBuilderController';
+import GQLService from './js/services/GQLService';
+import GQLTypeDirective from './js/directives/GQLTypeDirective';
+import GQLQueryItemDirective from './js/directives/GQLQueryItemDirective';
+import DialogController from './js/controllers/DialogController';
+import EditVariableController from './js/controllers/EditVariableController';
+import { typeList, typeState, queryList, queryState } from './js/states';
 
-import '../css/index.scss';
-import '../html/TypeInfo.html';
-import '../html/QueryBuilder.html';
+import './css/index.scss';
+import './html/TypeInfo.html';
+import './html/QueryBuilder.html';
 
 const app = angular.module('gqlApp', [angularAria, angularAnimate, angularMaterial, angularUIRouter, angularCookies]);
 
